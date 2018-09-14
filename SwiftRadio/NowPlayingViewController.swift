@@ -8,6 +8,8 @@
 
 import UIKit
 import MediaPlayer
+import Firebase
+import FirebaseAuth
 
 //*****************************************************************
 // NowPlayingViewControllerDelegate
@@ -27,6 +29,7 @@ protocol NowPlayingViewControllerDelegate: class {
 class NowPlayingViewController: UIViewController {
     
     weak var delegate: NowPlayingViewControllerDelegate?
+  var ref = Database.database().reference(withPath: "track")
 
     // MARK: - IB UI
     
@@ -50,6 +53,7 @@ class NowPlayingViewController: UIViewController {
     let radioPlayer = FRadioPlayer.shared
     
     var mpVolumeSlider: UISlider?
+    var uid = ""
 
     //*****************************************************************
     // MARK: - ViewDidLoad
@@ -81,6 +85,8 @@ class NowPlayingViewController: UIViewController {
         // Hide / Show Next/Previous buttons
         previousButton.isHidden = hideNextPreviousButtons
         nextButton.isHidden = hideNextPreviousButtons
+      
+        setupFirebaseUserListener()
     }
     
     //*****************************************************************
@@ -111,6 +117,19 @@ class NowPlayingViewController: UIViewController {
         radioPlayer.radioURL = URL(string: currentStation.streamURL)
         title = currentStation.name
     }
+  
+  func setupFirebaseUserListener(){
+    Auth.auth().addStateDidChangeListener { (auth, user) in
+      let user = Auth.auth().currentUser
+      if let user = user {
+        // The user's ID, unique to the Firebase project.
+        // Do NOT use this value to authenticate with your backend server,
+        // if you have one. Use getTokenWithCompletion:completion: instead.
+        self.uid = user.uid
+        self.ref = Database.database().reference(withPath: self.uid)
+      }
+    }
+  }
     
     //*****************************************************************
     // MARK: - Player Controls (Play/Pause/Volume)
@@ -248,6 +267,7 @@ class NowPlayingViewController: UIViewController {
             songLabel.text = currentTrack.title
             artistLabel.text = currentTrack.artist
             shouldAnimateSongLabel(animate)
+            saveTrackToHistory()
             return
         }
         
@@ -264,7 +284,21 @@ class NowPlayingViewController: UIViewController {
             songLabel.repeatCount = 3
             songLabel.animate()
         }
+
     }
+  
+  func saveTrackToHistory(){
+    
+    guard currentTrack.title != currentStation.name else { return }
+    
+//    let user = authResult.user
+//    let isAnonymous = user.isAnonymous  // true
+//    let uid = user.uid
+    
+    let trackItemRef = self.ref.child( "track " + NSDate().description)
+    
+    trackItemRef.setValue(currentTrack.toAnyObject())
+  }
     
     // Animations
     

@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Firebase
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -15,7 +16,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     weak var stationsViewController: StationsViewController?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-        
+        //init firebase
+        FirebaseApp.configure()
+      
+        Auth.auth().signInAnonymously() { (authResult, error) in
+          // ...
+          if let authResult = authResult{
+            let user = authResult.user
+            let isAnonymous = user.isAnonymous  // true
+            let uid = user.uid
+            print("Logged in anonymously \(uid)")
+          }
+        }
+      
         // MPNowPlayingInfoCenter
         UIApplication.shared.beginReceivingRemoteControlEvents()
         
